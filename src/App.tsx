@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getWeatherByCity, getWeatherByCoords } from './service/api';
 import type { WeatherData } from './types/weather';
 import { GlobeMap } from './components/GlobeMap';
