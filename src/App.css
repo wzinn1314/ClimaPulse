@@ -1,0 +1,414 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden !important;
+    background-color: #000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #fff;
+  }
+  
+  .globe-app-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .globe-viewport {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+  
+  /* 🔍 Barra de Pesquisa Superior */
+  .compact-header {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(18, 22, 28, 0.85);
+    backdrop-filter: blur(16px);
+    padding: 8px 18px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    max-width: 90vw;
+  }
+  
+  .brand h1 {
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+  }
+  
+  .brand span {
+    color: #e50914;
+  }
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  .search-bar input {
+    width: 200px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    outline: none;
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.25s ease;
+  }
+  
+  .search-bar input:focus {
+    width: 240px;
+    border-color: #e50914;
+    box-shadow: 0 0 8px rgba(229, 9, 20, 0.4);
+  }
+  
+  .search-bar button {
+    padding: 6px 10px;
+    background: #e50914;
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  
+  .search-bar button:hover {
+    background: #ff1e27;
+  }
+  
+  .search-bar .geo-btn {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .search-bar .geo-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* 🛠️ Ajuste de tamanho e cor dos ícones SVG nos botões */
+.search-bar button .btn-icon {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    min-height: 18px;
+    display: block;
+    stroke: #ffffff !important; /* Força a cor branca do contorno */
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Mantém os botões centralizados */
+  .search-bar button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Efeitos ao passar o mouse */
+  .search-bar button:hover .btn-icon {
+    transform: scale(1.15) rotate(-6deg);
+  }
+  
+  .search-bar .geo-btn:hover .btn-icon {
+    transform: scale(1.15) translateY(-1px);
+  }
+
+  /* 🌟 Tela de Boas-Vindas (Splash Screen) */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0d14;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.4s ease-out;
+  }
+  
+  .splash-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .splash-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    animation: pulseLogo 2s infinite ease-in-out;
+  }
+  
+  .splash-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  
+  .splash-title span {
+    color: #e50914;
+    font-weight: 900;
+  }
+  
+  .splash-subtitle {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 24px;
+  }
+  
+  .splash-loader {
+    width: 140px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .splash-loader::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #e50914, transparent);
+    animation: loadingBar 1.5s infinite;
+  }
+  
+  @keyframes pulseLogo {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 10px rgba(229, 9, 20, 0.4));
+    }
+    50% {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 22px rgba(229, 9, 20, 0.8));
+    }
+  }
+  
+  @keyframes loadingBar {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+ 
+  .weather-hud {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 1000;
+    width: 260px;
+    max-height: 55vh;
+    overflow-y: auto;
+    background: rgba(18, 22, 28, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+    
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+  }
+  
+  .weather-hud::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hud-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .country-flag {
+    width: 32px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+  }
+  
+  .hud-main h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    line-height: 1.1;
+    word-break: break-word;
+  }
+  
+  .hud-temp {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #e50914;
+    line-height: 1;
+  }
+  
+  .hud-desc {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    text-transform: capitalize;
+    font-weight: 400;
+  }
+  
+  .location-type-badge {
+    color: #e50914;
+    font-weight: 700;
+    margin-left: 4px;
+    text-transform: capitalize;
+  }
+  
+  .hud-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    border-radius: 8px;
+  }
+  
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  
+  .stat-item span {
+    font-size: 0.58rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+  
+  .stat-item strong {
+    font-size: 0.75rem;
+    color: #fff;
+    margin-top: 1px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  
+  @media (max-width: 768px) {
+    .compact-header {
+      top: 12px;
+      padding: 6px 12px;
+      gap: 8px;
+    }
+  
+    .brand h1 {
+      font-size: 0.85rem;
+    }
+  
+    .search-bar input {
+      width: 140px;
+      font-size: 0.75rem;
+    }
+  
+    .search-bar input:focus {
+      width: 160px;
+    }
+  
+    .weather-hud {
+      bottom: 12px;
+      left: 12px;
+      width: 240px;
+      max-height: 48vh;
+    }
+  }
+  
+  
+  @media (max-width: 480px) {
+    .compact-header {
+      top: 10px;
+      width: 94vw;
+      justify-content: space-between;
+      padding: 6px 10px;
+    }
+  
+    .search-bar input {
+      width: 110px;
+      padding: 5px 8px;
+    }
+  
+    .search-bar input:focus {
+      width: 130px;
+    }
+  
+    .weather-hud {
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      width: calc(100vw - 20px); 
+    }
+  
+    .hud-stats-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+  
+    .stat-item span {
+      font-size: 0.52rem;
+    }
+  
+    .stat-item strong {
+      font-size: 0.7rem;
+    }
+  }
+  
+ 
+  @media (max-height: 500px) {
+    .weather-hud {
+      max-height: 35vh;
+    }
+  }
