@@ -360,14 +360,35 @@
     }
   
     .weather-hud {
-      bottom: 12px;
-      left: 12px;
-      width: 240px;
-      max-height: 48vh;
+      /* Limita a altura sem estourar a tela */
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+  
+      /* Garante que o fundo escuro/preto indesejado suma */
+      background: rgba(15, 23, 42, 0.75) !important; /* Ajuste para a cor padrão da sua interface */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      
+      /* Remove sombras pesadas ou bordas pretas de fundo */
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+  
+    /* Garante que o fundo da barra de rolagem não fique preto */
+    .weather-hud::-webkit-scrollbar {
+      width: 4px;
+      background: transparent;
+    }
+  
+    .weather-hud::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  
+    .weather-hud::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
     }
   }
-  
-  
   @media (max-width: 480px) {
     .compact-header {
       top: 10px;
