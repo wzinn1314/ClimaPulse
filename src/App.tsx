@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { getWeatherByCity, getWeatherByCoords } from './service/api';
 import type { WeatherData } from './types/weather';
 import { GlobeMap } from './components/GlobeMap';
-import logoIcon from '/logo.svg'; // Usa a logo da pasta public
+import logoIcon from '/logo.svg';
 import './App.css';
-
 
 const countryNames: Record<string, boolean> = {
   BR: true, BRA: true, BRASIL: true, BRAZIL: true,
@@ -27,8 +26,10 @@ export default function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [flagUrl, setFlagUrl] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('Cidade');
+  
+  // Controle de expansão do HUD em telas pequenas
+  const [isHudExpanded, setIsHudExpanded] = useState<boolean>(false);
 
-  // Controle dos 2 segundos da Splash Screen
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -49,15 +50,11 @@ export default function App() {
       return 'País';
     }
 
-
     return 'Cidade';
   };
 
   const resolveFlag = (query: string, countryCode?: string) => {
     const parts = query.split(',').map((p) => p.trim().toUpperCase());
-    
-    
-
     const cityNameFormatted = parts[0].toLowerCase().replace(/\s+/g, '-');
     if (countryCode === 'BR') {
       return `https://raw.githubusercontent.com/felipefdl/cidades-brasileiras-flags/master/png/${cityNameFormatted}.png`;
@@ -134,7 +131,6 @@ export default function App() {
     return `${hours}:${minutes}`;
   };
 
-  
   if (showSplash) {
     return (
       <div className="splash-screen">
@@ -150,7 +146,6 @@ export default function App() {
 
   return (
     <div className="globe-app-container">
-      
       {weatherData && (
         <GlobeMap
           lat={coords.lat}
@@ -159,10 +154,9 @@ export default function App() {
         />
       )}
 
-      
       <header className="compact-header">
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src={logoIcon} alt="ClimaPulse Logo" style={{ width: '24px', height: '24px' }} />
+        <div className="brand">
+          <img src={logoIcon} alt="ClimaPulse Logo" />
           <h1>CLIMA<span>PULSE</span></h1>
         </div>
 
@@ -172,7 +166,7 @@ export default function App() {
             value={citySearch}
             onChange={(e) => setCitySearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchByCity(citySearch)}
-            placeholder="Cidade, Estado ou País..."
+            placeholder="Cidade, Estado..."
           />
           
           <button onClick={() => fetchByCity(citySearch)} title="Buscar">
@@ -191,29 +185,41 @@ export default function App() {
         </div>
       </header>
 
-      
       {weatherData && !loading && (
-        <aside className="weather-hud">
-          <div className="hud-main">
-            {flagUrl && (
-              <img
-                src={flagUrl}
-                alt="Bandeira do local"
-                className="country-flag"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://flagcdn.com/w40/${weatherData.sys?.country?.toLowerCase()}.png`;
-                }}
-              />
-            )}
-            <div>
-              <h2>{weatherData.name}</h2>
-              <span className="hud-temp">{Math.round(weatherData.main.temp)}°C</span>
-              
-              <p className="hud-desc">
-                {weatherData.weather?.[0]?.description || ''}
-                <span className="location-type-badge">• {locationType}</span>
-              </p>
+        <aside className={`weather-hud ${isHudExpanded ? 'expanded' : ''}`}>
+          <div className="hud-header-toggle" onClick={() => setIsHudExpanded(!isHudExpanded)}>
+            <div className="hud-main">
+              {flagUrl && (
+                <img
+                  src={flagUrl}
+                  alt="Bandeira do local"
+                  className="country-flag"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://flagcdn.com/w40/${weatherData.sys?.country?.toLowerCase()}.png`;
+                  }}
+                />
+              )}
+              <div>
+                <h2>{weatherData.name}</h2>
+                <span className="hud-temp">{Math.round(weatherData.main.temp)}°C</span>
+                <p className="hud-desc">
+                  {weatherData.weather?.[0]?.description || ''}
+                  <span className="location-type-badge">• {locationType}</span>
+                </p>
+              </div>
             </div>
+            
+            <button className="hud-expand-btn" aria-label="Expandir detalhes">
+              <svg 
+                className={`btn-icon chevron ${isHudExpanded ? 'open' : ''}`} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            </button>
           </div>
 
           <div className="hud-stats-grid">
