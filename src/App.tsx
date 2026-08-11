@@ -27,7 +27,6 @@ export default function App() {
   const [flagUrl, setFlagUrl] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('Cidade');
   
-  // Controle de expansão do HUD em telas pequenas
   const [isHudExpanded, setIsHudExpanded] = useState<boolean>(false);
 
   useEffect(() => {
@@ -146,13 +145,16 @@ export default function App() {
 
   return (
     <div className="globe-app-container">
-      {weatherData && (
-        <GlobeMap
-          lat={coords.lat}
-          lon={coords.lon}
-          weatherData={weatherData}
-        />
-      )}
+      {/* O container do Globo precisa ter a classe globe-viewport para receber os eventos de toque */}
+      <div className="globe-viewport">
+        {weatherData && (
+          <GlobeMap
+            lat={coords.lat}
+            lon={coords.lon}
+            weatherData={weatherData}
+          />
+        )}
+      </div>
 
       <header className="compact-header">
         <div className="brand">

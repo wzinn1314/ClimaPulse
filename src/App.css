@@ -14,17 +14,20 @@ html, body {
   background-color: #000;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #fff;
+  touch-action: none; /* Melhora a rotação do globo no celular */
 }
 
+/* Container Principal */
 .globe-app-container {
   position: relative;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  pointer-events: none; /* Permite arrastar o globo em áreas vazias */
+  /* ATENÇÃO: NÃO USAR pointer-events: none AQUI */
 }
 
+/* Container do Globo 3D */
 .globe-viewport {
   width: 100vw;
   height: 100vh;
@@ -33,6 +36,8 @@ html, body {
   top: 0;
   left: 0;
   z-index: 1;
+  pointer-events: auto !important; /* Garante toque e clique no Globo */
+  touch-action: none;
 }
 
 /* 🔍 Barra de Pesquisa Superior */
@@ -211,7 +216,7 @@ html, body {
   100% { left: 100%; }
 }
 
-/* 📍 HUD Clima - Canto Inferior Esquerdo */
+/* 📍 HUD Clima - Canto Inferior Esquerdo (Compacto e Responsivo) */
 .weather-hud {
   position: fixed;
   bottom: calc(16px + env(safe-area-inset-bottom));
@@ -225,7 +230,7 @@ html, body {
   border-radius: 16px;
   padding: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  pointer-events: auto;
+  pointer-events: auto; /* Apenas o menu reage ao toque */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -342,7 +347,7 @@ html, body {
   text-overflow: ellipsis;
 }
 
-/* 📱 Media Queries Ajustadas para Mobile */
+/* 📱 Media Queries para Celulares */
 @media (max-width: 600px) {
   .compact-header {
     top: 10px;
@@ -351,7 +356,7 @@ html, body {
   }
 
   .brand h1 {
-    display: none; /* Oculta texto para economizar espaço e deixar só o logotipo */
+    display: none; /* Oculta texto para dar espaço na barra de busca */
   }
 
   .search-bar input {
@@ -367,6 +372,6 @@ html, body {
     bottom: calc(12px + env(safe-area-inset-bottom));
     left: calc(12px + env(safe-area-inset-left));
     width: calc(100vw - 24px);
-    max-width: 320px;
+    max-width: 300px;
   }
 }
