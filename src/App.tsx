@@ -1,91 +1,77 @@
-import { useState, useEffect } from 'react';
-import { getWeatherByCity, getWeatherByCoords } from './service/api';
+import { useState, useEffect, useRef } from 'react';
+import { getWeatherByCoords, searchLocations, getWeatherByCity, type GeoLocation } from './service/api';
 import type { WeatherData } from './types/weather';
 import { GlobeMap } from './components/GlobeMap';
 import logoIcon from '/logo.svg';
 import './App.css';
 
-const countryNames: Record<string, boolean> = {
-  BR: true, BRA: true, BRASIL: true, BRAZIL: true,
-  US: true, USA: true, 'ESTADOS UNIDOS': true,
-  AR: true, ARGENTINA: true, PT: true, PORTUGAL: true,
-  ES: true, ESPANHA: true, FR: true, FRANÇA: true,
-  IT: true, ITÁLIA: true, DE: true, ALEMANHA: true,
-  JP: true, JAPÃO: true, CN: true, CHINA: true,
-  RU: true, RÚSSIA: true, CA: true, CANADÁ: true,
-  MX: true, MÉXICO: true, CL: true, CHILE: true,
-  UY: true, URUGUAI: true, PY: true, PARAGUAI: true,
-  CO: true, COLÔMBIA: true,
-};
-
 export default function App() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [citySearch, setCitySearch] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<GeoLocation[]>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lon: number }>({ lat: -23.5505, lon: -46.6333 });
   const [loading, setLoading] = useState<boolean>(true);
   const [flagUrl, setFlagUrl] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('Cidade');
-  
   const [isHudExpanded, setIsHudExpanded] = useState<boolean>(false);
 
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
+    const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  const detectLocationType = (query: string, data: WeatherData): string => {
-    const cleanQuery = query.trim().toUpperCase();
-    const parts = cleanQuery.split(',').map((p) => p.trim());
-    const countryCode = data.sys?.country?.toUpperCase();
-
-    if (
-      countryNames[cleanQuery] ||
-      cleanQuery === countryCode ||
-      (parts.length === 1 && countryNames[parts[0]])
-    ) {
-      return 'País';
-    }
-
-    return 'Cidade';
-  };
-
-  const resolveFlag = (query: string, countryCode?: string) => {
-    const parts = query.split(',').map((p) => p.trim().toUpperCase());
-    const cityNameFormatted = parts[0].toLowerCase().replace(/\s+/g, '-');
-    if (countryCode === 'BR') {
-      return `https://raw.githubusercontent.com/felipefdl/cidades-brasileiras-flags/master/png/${cityNameFormatted}.png`;
-    }
-
-    return countryCode ? `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png` : '';
-  };
-
-  const fetchByCity = async (query: string) => {
-    if (!query.trim()) return;
-    setLoading(true);
-    try {
-      const response = await getWeatherByCity(query);
-      if (response.data) {
-        const type = detectLocationType(query, response.data);
-        setLocationType(type);
-
-        if (type === 'País') {
-          const cCode = response.data.sys?.country?.toLowerCase();
-          setFlagUrl(`https://flagcdn.com/w40/${cCode}.png`);
-        } else {
-          setFlagUrl(resolveFlag(query, response.data.sys?.country));
-        }
-
-        setWeatherData(response.data);
-        if (response.data.coord) {
-          setCoords({ lat: response.data.coord.lat, lon: response.data.coord.lon });
-        }
+  // Oculta sugestões ao clicar fora do input
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
       }
-      setCitySearch('');
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 🔍 Debounce da Busca Global na API do OpenWeather
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (citySearch.trim().length >= 2) {
+        try {
+          const res = await searchLocations(citySearch);
+          setSuggestions(res.data);
+          setShowDropdown(true);
+        } catch {
+          setSuggestions([]);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [citySearch]);
+
+  // Carrega Clima por Coordenadas Exatas (Vindo da Busca/Autocomplete)
+  const fetchWeatherByLocation = async (loc: GeoLocation) => {
+    setLoading(true);
+    setShowDropdown(false);
+    try {
+      const res = await getWeatherByCoords(loc.lat, loc.lon);
+      if (res.data) {
+        setWeatherData(res.data);
+        setCoords({ lat: loc.lat, lon: loc.lon });
+        
+        // Define o tipo e resolvedor de bandeira
+        const type = loc.state ? 'Cidade' : 'País/Região';
+        setLocationType(type);
+        setFlagUrl(`https://flagcdn.com/w40/${loc.country.toLowerCase()}.png`);
+      }
+      setCitySearch(`${loc.name}${loc.state ? `, ${loc.state}` : ''} (${loc.country})`);
     } catch {
-      alert('Local não encontrado. Tente no formato: Cidade, Estado, País');
+      alert('Erro ao carregar dados do local selecionado.');
     } finally {
       setLoading(false);
     }
@@ -98,37 +84,39 @@ export default function App() {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            const response = await getWeatherByCoords(latitude, longitude);
-            if (response.data) {
-              setWeatherData(response.data);
+            const res = await getWeatherByCoords(latitude, longitude);
+            if (res.data) {
+              setWeatherData(res.data);
               setCoords({ lat: latitude, lon: longitude });
-              setFlagUrl(`https://flagcdn.com/w40/${response.data.sys?.country?.toLowerCase()}.png`);
+              setFlagUrl(`https://flagcdn.com/w40/${res.data.sys?.country?.toLowerCase()}.png`);
               setLocationType('Cidade');
             }
           } catch {
-            fetchByCity('São Paulo, SP, BR');
+            fetchDefaultCity();
           } finally {
             setLoading(false);
           }
         },
-        () => fetchByCity('São Paulo, SP, BR')
+        () => fetchDefaultCity()
       );
     } else {
-      fetchByCity('São Paulo, SP, BR');
+      fetchDefaultCity();
     }
+  };
+
+  const fetchDefaultCity = async () => {
+    const res = await getWeatherByCity('São Paulo');
+    if (res.data) {
+      setWeatherData(res.data);
+      setCoords({ lat: res.data.coord.lat, lon: res.data.coord.lon });
+      setFlagUrl('https://flagcdn.com/w40/br.png');
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
     loadUserLocationWeather();
   }, []);
-
-  const formatTime = (timestamp?: number, timezoneOffset: number = 0) => {
-    if (!timestamp) return '--:--';
-    const date = new Date((timestamp + timezoneOffset) * 1000);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
 
   if (showSplash) {
     return (
@@ -145,14 +133,9 @@ export default function App() {
 
   return (
     <div className="globe-app-container">
-      {/* O container do Globo precisa ter a classe globe-viewport para receber os eventos de toque */}
       <div className="globe-viewport">
         {weatherData && (
-          <GlobeMap
-            lat={coords.lat}
-            lon={coords.lon}
-            weatherData={weatherData}
-          />
+          <GlobeMap lat={coords.lat} lon={coords.lon} weatherData={weatherData} />
         )}
       </div>
 
@@ -162,28 +145,42 @@ export default function App() {
           <h1>CLIMA<span>PULSE</span></h1>
         </div>
 
-        <div className="search-bar">
-          <input
-            type="text"
-            value={citySearch}
-            onChange={(e) => setCitySearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchByCity(citySearch)}
-            placeholder="Cidade, Estado..."
-          />
-          
-          <button onClick={() => fetchByCity(citySearch)} title="Buscar">
-            <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
+        <div className="search-bar-wrapper" ref={searchContainerRef}>
+          <div className="search-bar">
+            <input
+              type="text"
+              value={citySearch}
+              onChange={(e) => setCitySearch(e.target.value)}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Buscar qualquer cidade no mundo..."
+            />
 
-          <button className="geo-btn" onClick={loadUserLocationWeather} title="Localização Atual">
-            <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-          </button>
+            <button className="geo-btn" onClick={loadUserLocationWeather} title="Localização Atual">
+              <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </button>
+          </div>
+
+          {/* 🌐 Autocomplete Dinâmico em Tempo Real */}
+          {showDropdown && suggestions.length > 0 && (
+            <ul className="search-suggestions">
+              {suggestions.map((loc, idx) => (
+                <li key={`${loc.lat}-${loc.lon}-${idx}`} onClick={() => fetchWeatherByLocation(loc)}>
+                  <div className="suggestion-info">
+                    <span className="suggestion-name">{loc.name}</span>
+                    <span className="suggestion-sub">
+                      {loc.state ? `${loc.state}, ` : ''}{loc.country}
+                    </span>
+                  </div>
+                  <span className="badge badge-cidade">
+                    {loc.state ? 'Cidade/UF' : 'País'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </header>
 
@@ -191,16 +188,7 @@ export default function App() {
         <aside className={`weather-hud ${isHudExpanded ? 'expanded' : ''}`}>
           <div className="hud-header-toggle" onClick={() => setIsHudExpanded(!isHudExpanded)}>
             <div className="hud-main">
-              {flagUrl && (
-                <img
-                  src={flagUrl}
-                  alt="Bandeira do local"
-                  className="country-flag"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://flagcdn.com/w40/${weatherData.sys?.country?.toLowerCase()}.png`;
-                  }}
-                />
-              )}
+              {flagUrl && <img src={flagUrl} alt="Bandeira" className="country-flag" />}
               <div>
                 <h2>{weatherData.name}</h2>
                 <span className="hud-temp">{Math.round(weatherData.main.temp)}°C</span>
@@ -209,65 +197,6 @@ export default function App() {
                   <span className="location-type-badge">• {locationType}</span>
                 </p>
               </div>
-            </div>
-            
-            <button className="hud-expand-btn" aria-label="Expandir detalhes">
-              <svg 
-                className={`btn-icon chevron ${isHudExpanded ? 'open' : ''}`} 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2.5"
-              >
-                <polyline points="18 15 12 9 6 15" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="hud-stats-grid">
-            <div className="stat-item">
-              <span>Mín / Máx</span>
-              <strong>{Math.round(weatherData.main.temp_min)}°C / {Math.round(weatherData.main.temp_max)}°C</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Sensação</span>
-              <strong>{Math.round(weatherData.main.feels_like)}°C</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Umidade</span>
-              <strong>{weatherData.main.humidity}%</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Vento</span>
-              <strong>{weatherData.wind.speed} km/h</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Pressão</span>
-              <strong>{weatherData.main.pressure} hPa</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Nebulosidade</span>
-              <strong>{weatherData.clouds?.all || 0}%</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Visibilidade</span>
-              <strong>{((weatherData.visibility || 0) / 1000).toFixed(1)} km</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Nascer do Sol</span>
-              <strong>{formatTime(weatherData.sys?.sunrise, weatherData.timezone)}</strong>
-            </div>
-
-            <div className="stat-item">
-              <span>Pôr do Sol</span>
-              <strong>{formatTime(weatherData.sys?.sunset, weatherData.timezone)}</strong>
             </div>
           </div>
         </aside>

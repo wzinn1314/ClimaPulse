@@ -24,7 +24,6 @@ html, body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  /* ATENÇÃO: NÃO USAR pointer-events: none AQUI */
 }
 
 /* Container do Globo 3D */
@@ -36,14 +35,65 @@ html, body {
   top: 0;
   left: 0;
   z-index: 1;
-  pointer-events: auto !important; /* Garante toque e clique no Globo */
-  touch-action: none;
+  overflow: hidden;
+}
+
+/* 📍 Marcador HTML Customizado e Realista sobre o Globo */
+.globe-marker-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+/* Ponto pulsante Vermelho Neon no local */
+.marker-pin {
+  width: 12px;
+  height: 12px;
+  background: #e50914;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #e50914, 0 0 25px #e50914;
+  animation: pinPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pinPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+/* Card HUD com Nome da Cidade e Temperatura */
+.marker-popup {
+  background: rgba(12, 16, 24, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 9, 20, 0.45);
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 10px rgba(229, 9, 20, 0.2);
+}
+
+.marker-city {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.marker-temp {
+  color: #e50914;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 /* 🔍 Barra de Pesquisa Superior */
 .compact-header {
   position: absolute;
-  top: 16px;
+  top: max(16px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -55,8 +105,8 @@ html, body {
   -webkit-backdrop-filter: blur(16px);
   padding: 8px 16px;
   border-radius: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
   max-width: 92vw;
   pointer-events: auto;
 }
@@ -83,6 +133,12 @@ html, body {
   color: #e50914;
 }
 
+/* Container pai da busca para posicionamento do autocomplete */
+.search-bar-wrapper {
+  position: relative;
+  width: auto;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
@@ -90,53 +146,136 @@ html, body {
 }
 
 .search-bar input {
-  width: 180px;
-  padding: 6px 12px;
+  width: 200px;
+  padding: 8px 14px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(12, 18, 30, 0.7);
+  backdrop-filter: blur(8px);
   color: #fff;
   outline: none;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-family: 'Inter', sans-serif;
-  transition: width 0.25s ease;
+  transition: width 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .search-bar input:focus {
-  width: 220px;
+  width: 260px;
   border-color: #e50914;
-  box-shadow: 0 0 8px rgba(229, 9, 20, 0.4);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.4);
 }
 
 .search-bar button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: #e50914;
   border: none;
   border-radius: 20px;
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
 .search-bar button:hover {
-  background: #ff1e27;
+  background: #b80710;
+}
+
+.search-bar button:active {
+  transform: scale(0.95);
 }
 
 .search-bar .geo-btn {
   background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .search-bar .geo-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(229, 9, 20, 0.25);
+  border-color: rgba(229, 9, 20, 0.4);
 }
 
 .search-bar button .btn-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   stroke: #ffffff;
+}
+
+/* Menu Dropdown de Autocomplete (Ajustado para Vermelho) */
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 260px;
+  background: rgba(10, 15, 26, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  border-radius: 12px;
+  list-style: none;
+  padding: 6px 0;
+  margin: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+.search-suggestions li {
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.search-suggestions li:hover {
+  background: rgba(229, 9, 20, 0.15);
+}
+
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-name {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.suggestion-sub {
+  color: #8a99ad;
+  font-size: 0.75rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.badge-país {
+  background: rgba(229, 9, 20, 0.2);
+  color: #e50914;
+  border: 1px solid rgba(229, 9, 20, 0.4);
+}
+
+.badge-cidade {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+.badge-estado {
+  background: rgba(155, 89, 182, 0.2);
+  color: #9b59b6;
+  border: 1px solid rgba(155, 89, 182, 0.4);
 }
 
 /* 🌟 Splash Screen */
@@ -230,7 +369,7 @@ html, body {
   border-radius: 16px;
   padding: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  pointer-events: auto; /* Apenas o menu reage ao toque */
+  pointer-events: auto;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -347,31 +486,35 @@ html, body {
   text-overflow: ellipsis;
 }
 
-/* 📱 Media Queries para Celulares */
+/* 📱 Media Queries para Celulares e Telas Menores */
 @media (max-width: 600px) {
   .compact-header {
-    top: 10px;
+    top: max(10px, env(safe-area-inset-top));
     padding: 6px 12px;
     max-width: 95vw;
   }
 
   .brand h1 {
-    display: none; /* Oculta texto para dar espaço na barra de busca */
+    display: none; /* Oculta texto da marca para liberar espaço */
   }
 
   .search-bar input {
-    width: 130px;
-    font-size: 0.75rem;
+    width: 140px;
+    font-size: 0.8rem;
   }
 
   .search-bar input:focus {
-    width: 150px;
+    width: 165px;
+  }
+
+  .search-suggestions {
+    min-width: 200px;
   }
 
   .weather-hud {
     bottom: calc(12px + env(safe-area-inset-bottom));
     left: calc(12px + env(safe-area-inset-left));
     width: calc(100vw - 24px);
-    max-width: 300px;
+    max-width: 320px;
   }
 }
