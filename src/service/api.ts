@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { WeatherData } from '../types/weather';
 
 const API_KEY = '7f18bcf7e9cb3ee5387a722fd1a363fb';
 
@@ -8,15 +9,17 @@ const api = axios.create({
 
 export interface GeoLocation {
   name: string;
+  local_names?: Record<string, string>;
   lat: number;
   lon: number;
   country: string;
   state?: string;
 }
 
-// 🔍 Busca dinamicamente qualquer cidade/estado/país no mundo todo
-export const searchLocations = (query: string) => {
+
+export const searchLocations = (query: string, signal?: AbortSignal) => {
   return api.get<GeoLocation[]>('geo/1.0/direct', {
+    signal,
     params: {
       q: query,
       limit: 5,
@@ -27,7 +30,7 @@ export const searchLocations = (query: string) => {
 
 // Busca clima por nome
 export const getWeatherByCity = (city: string) => {
-  return api.get('data/2.5/weather', {
+  return api.get<WeatherData>('data/2.5/weather', {
     params: {
       q: city,
       units: 'metric',
@@ -39,7 +42,7 @@ export const getWeatherByCity = (city: string) => {
 
 // Busca clima por coordenadas (Preciso para a busca via Autocomplete)
 export const getWeatherByCoords = (lat: number, lon: number) => {
-  return api.get('data/2.5/weather', {
+  return api.get<WeatherData>('data/2.5/weather', {
     params: {
       lat,
       lon,

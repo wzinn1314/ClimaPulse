@@ -1,4 +1,4 @@
-* {
+﻿* {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -9,12 +9,12 @@
 html, body {
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   overflow: hidden !important;
   background-color: #000;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #fff;
-  touch-action: none; /* Melhora a rotação do globo no celular */
+  touch-action: manipulation;
 }
 
 /* Container Principal */
@@ -22,7 +22,7 @@ html, body {
   position: relative;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   overflow: hidden;
 }
 
@@ -30,7 +30,7 @@ html, body {
 .globe-viewport {
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   position: absolute;
   top: 0;
   left: 0;
@@ -40,10 +40,9 @@ html, body {
 
 /* 📍 Marcador HTML Customizado e Realista sobre o Globo */
 .globe-marker-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transform: translate(-50%, -100%);
+  /* The renderer anchors this box; the label must not affect its center. */
+  width: 12px;
+  height: 12px;
   pointer-events: none;
 }
 
@@ -66,6 +65,11 @@ html, body {
 
 /* Card HUD com Nome da Cidade e Temperatura */
 .marker-popup {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
   background: rgba(12, 16, 24, 0.82);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -487,34 +491,63 @@ html, body {
 }
 
 /* 📱 Media Queries para Celulares e Telas Menores */
-@media (max-width: 600px) {
-  .compact-header {
-    top: max(10px, env(safe-area-inset-top));
-    padding: 6px 12px;
-    max-width: 95vw;
-  }
 
-  .brand h1 {
-    display: none; /* Oculta texto da marca para liberar espaço */
-  }
+/* Fluid controls and scrollable information panels. */
+.compact-header { width: min(700px, calc(100% - 32px)); z-index: 1100; }
+.search-bar-wrapper { flex: 1; min-width: 0; }
+.search-bar input, .search-bar input:focus { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
+.search-bar button { min-width: 44px; min-height: 44px; font-size: 22px; }
+.search-suggestions { min-width: 0; max-height: min(380px, calc(var(--app-height, 100dvh) - 110px - env(safe-area-inset-top))); touch-action: pan-y pinch-zoom; overscroll-behavior: contain; }
+.search-suggestions ul { list-style: none; }
+.search-suggestions li { min-height: 64px; padding: 12px 14px; }
+.search-suggestions li[aria-selected="true"] { background: rgba(229, 9, 20, .22); }
+.search-hint { padding: 10px 14px; font-size: .8rem; color: #bac7d9; line-height: 1.5; }
+.suggestion-info { min-width: 0; gap: 5px; }
+.suggestion-name, .suggestion-sub { overflow-wrap: anywhere; }
+.suggestion-sub { color: #b0bfd2; }
+.app-notice { position: absolute; top: calc(88px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 900; width: min(90%, 540px); max-height: 25%; overflow-y: auto; padding: 10px 14px; border-radius: 10px; background: #12161cee; font-size: .85rem; text-align: center; touch-action: pan-y; }
+.weather-hud { width: min(350px, calc(100% - 32px)); max-height: calc(var(--app-height, 100dvh) - 160px); overflow-y: auto; touch-action: pan-y pinch-zoom; overscroll-behavior: contain; transition: none; }
+.hud-header-toggle { width: 100%; min-height: 48px; color: inherit; background: transparent; border: 0; text-align: left; font: inherit; gap: 12px; }
+.hud-header-toggle:focus-visible, .geo-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.hud-main, .hud-main > div { min-width: 0; }
+.hud-main h2 { font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.hud-temp { font-size: 1.8rem; }
+.hud-desc { font-size: .85rem; overflow-wrap: anywhere; }
+.location-context { color: #b0bfd2; font-size: .8rem; line-height: 1.5; margin-top: 7px; overflow-wrap: anywhere; }
+.hud-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.weather-hud.expanded .hud-stats-grid { max-height: none; }
+.stat-item { min-width: 0; padding: 8px; overflow-wrap: anywhere; }
+.stat-item dt { font-size: .78rem; color: #b0bfd2; }
+.stat-item dd { font-size: .95rem; margin-top: 4px; }
+.marker-popup { max-width: min(220px, 55vw); }
+.marker-city { white-space: normal; overflow-wrap: anywhere; }
+.globe-viewport { width: 100%; height: 100%; touch-action: none; }
+.splash-screen { height: var(--app-height, 100dvh); overflow-y: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.splash-title { font-size: clamp(1.2rem, 5vw, 1.6rem); }
 
-  .search-bar input {
-    width: 140px;
-    font-size: 0.8rem;
-  }
-
-  .search-bar input:focus {
-    width: 165px;
-  }
-
-  .search-suggestions {
-    min-width: 200px;
-  }
-
-  .weather-hud {
-    bottom: calc(12px + env(safe-area-inset-bottom));
-    left: calc(12px + env(safe-area-inset-left));
-    width: calc(100vw - 24px);
-    max-width: 320px;
-  }
+@media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+  .globe-app-container { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left)); }
+  .compact-header { position: relative; grid-row: 1; top: auto; left: auto; transform: none; width: 100%; max-width: none; gap: 8px; padding: 6px 8px; border-radius: 18px; }
+  .brand { flex-shrink: 0; }
+  .brand h1 { display: none; }
+  .search-bar-wrapper { position: static; }
+  .search-bar input { padding-inline: 10px; }
+  .search-suggestions { left: 0; right: 0; width: 100%; }
+  .globe-app-container > .globe-viewport { position: relative; grid-row: 2; min-height: 0; width: 100%; height: 100%; border-radius: 16px; }
+  .weather-hud { position: relative; grid-row: 3; bottom: auto; left: auto; width: 100%; max-width: none; max-height: calc(var(--app-height, 100dvh) * .44); padding: 12px; }
+  .hud-temp { font-size: 1.6rem; }
+  .app-notice { top: calc(78px + env(safe-area-inset-top)); font-size: .8rem; }
+  .globe-app-container:has(.search-bar input:focus) .weather-hud { display: none; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .globe-app-container { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 36%); grid-template-rows: auto minmax(0, 1fr); gap: 8px; padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left)); }
+  .compact-header { position: relative; grid-column: 1 / -1; grid-row: 1; top: auto; left: auto; transform: none; width: 100%; max-width: none; padding: 6px 8px; }
+  .globe-app-container > .globe-viewport { position: relative; grid-column: 1; grid-row: 2; min-height: 0; height: 100%; width: 100%; }
+  .weather-hud { position: relative; grid-column: 2; grid-row: 2; top: auto; left: auto; bottom: auto; width: 100%; max-width: none; max-height: 100%; min-height: 0; }
+  .globe-app-container:has(.search-bar input:focus) .weather-hud { display: none; }
+  .globe-app-container:has(.search-bar input:focus) > .globe-viewport { grid-column: 1 / -1; }
+  .splash-logo { width: 48px; height: 48px; margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

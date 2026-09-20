@@ -1,16 +1,32 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Globe from 'react-globe.gl';
 import * as THREE from 'three';
 import type { WeatherData } from '../types/weather';
+
+// Keep the pin and radar on the same surface, just above the cloud layer.
+const MARKER_ALTITUDE = 0.006;
 
 interface GlobeMapProps {
   lat: number;
   lon: number;
   weatherData: WeatherData;
+  locationName: string;
 }
 
-export const GlobeMap: React.FC<GlobeMapProps> = ({ lat, lon, weatherData }) => {
+export const GlobeMap: React.FC<GlobeMapProps> = ({ lat, lon, weatherData, locationName }) => {
   const globeRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 1, height: 1 });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setSize({ width: Math.max(1, entry.contentRect.width), height: Math.max(1, entry.contentRect.height) });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   // 1. Transição de câmera para o local
   useEffect(() => {
@@ -61,16 +77,18 @@ export const GlobeMap: React.FC<GlobeMapProps> = ({ lat, lon, weatherData }) => 
     {
       lat,
       lng: lon,
-      name: weatherData.name,
+      name: locationName,
       temp: `${Math.round(weatherData.main.temp)}°C`,
       desc: weatherData.weather?.[0]?.description || '',
     },
   ];
 
   return (
-    <div className="globe-viewport">
+    <div className="globe-viewport" ref={containerRef}>
       <Globe
         ref={globeRef}
+        width={size.width}
+        height={size.height}
         
         // Texturas do Globo Terra
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
@@ -86,6 +104,7 @@ export const GlobeMap: React.FC<GlobeMapProps> = ({ lat, lon, weatherData }) => 
         ringsData={markerData}
         ringLat={(d: any) => d.lat}
         ringLng={(d: any) => d.lng}
+        ringAltitude={MARKER_ALTITUDE}
         ringColor={() => '#e50914'}
         ringMaxRadius={6}
         ringPropagationSpeed={2}
@@ -95,16 +114,22 @@ export const GlobeMap: React.FC<GlobeMapProps> = ({ lat, lon, weatherData }) => 
         htmlElementsData={markerData}
         htmlLat={(d: any) => d.lat}
         htmlLng={(d: any) => d.lng}
+        htmlAltitude={MARKER_ALTITUDE}
         htmlElement={(d: any) => {
           const el = document.createElement('div');
           el.className = 'globe-marker-card';
-          el.innerHTML = `
-            <div className="marker-pin"></div>
-            <div className="marker-popup">
-              <span className="marker-city">${d.name}</span>
-              <span className="marker-temp">${d.temp}</span>
-            </div>
-          `;
+          const pin = document.createElement('div');
+          pin.className = 'marker-pin';
+          const popup = document.createElement('div');
+          popup.className = 'marker-popup';
+          const city = document.createElement('span');
+          city.className = 'marker-city';
+          city.textContent = d.name;
+          const temperature = document.createElement('span');
+          temperature.className = 'marker-temp';
+          temperature.textContent = d.temp;
+          popup.append(city, temperature);
+          el.append(pin, popup);
           return el;
         }}
       />
